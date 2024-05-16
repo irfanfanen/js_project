@@ -1,0 +1,114 @@
+let apiUrl = 'http://localhost:3000/users';
+let userList = document.getElementById('userList');
+userList.innerHTML = '';
+document.getElementById('exampleModalLabel').textContent = 'Create';
+
+function getUsers() {
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(users => {
+            console.log(users)
+
+            users.forEach(user => {
+                const listItem = document.createElement('tr');
+
+                listItem.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <button onclick="deleteUser('${user.id}')" class="btn btn-danger btn-sm">Delete</button>
+                        <button onclick="editUser('${user.id}', '${user.name}', '${user.email}')" class="btn btn-success btn-sm">Edit</button>
+                    </td>
+                `;
+
+                userList.appendChild(listItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error', error);
+        });
+}
+
+function createUser() {
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({name, email})
+    })
+    .then(res => res.json())
+    .then(() => {
+        while (userList.firstChild) {
+            userList.removeChild(userList.firstChild);
+        }
+        document.getElementById('closeButton').click();
+        getUsers()
+        document.getElementById('name').value = '';
+        document.getElementById('email').value = '';
+    });
+}
+
+function deleteUser(id) {
+    console.log(id);
+    fetch(`${apiUrl}/${id}`, {
+        method: 'DELETE',
+    })
+    .then(() => {
+        while (userList.firstChild) {
+            userList.removeChild(userList.firstChild);
+        }
+        getUsers()
+    });  
+}
+
+function editUser(id, name, email) {
+    document.getElementById('exampleModalLabel').textContent = 'Edit';
+    document.getElementById('userId').value = id;
+    document.getElementById('name').value = name;
+    document.getElementById('email').value = email;
+
+    document.getElementById('openButton').click();
+}
+
+function updateUser() {
+    const id = document.getElementById('userId').value;
+    const newName = document.getElementById('name').value;
+    const newEmail = document.getElementById('email').value;
+
+    if(newName && newEmail) {
+        fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({name: newName, email: newEmail})
+        })
+        .then(() => {
+            while (userList.firstChild) {
+                userList.removeChild(userList.firstChild);
+            }
+            document.getElementById('userId').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('closeButton').click();
+            document.getElementById('exampleModalLabel').textContent = 'Create';
+            getUsers()
+        });
+    }
+}
+
+document.getElementById('createUserForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    let action = document.getElementById('exampleModalLabel').textContent;
+    
+    if(action == 'Create') {
+        createUser();
+        console.log('create', action);
+    }else{
+        updateUser();
+        console.log('update', action);
+    }
+})
+
+getUsers();
